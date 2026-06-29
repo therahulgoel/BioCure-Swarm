@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioCure Swarm | Cerebras Proteomics Studio</title>
+    <link class="cache-control" rel="stylesheet" href="style.css?v=2.0.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add jQuery and 3Dmol for molecular rendering -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://3dmol.org/build/3Dmol-min.js"></script>
+</head>
+<body class="bg-slate-900 text-white font-sans overflow-hidden relative">
+    <!-- Non-blocking top progress bar -->
+    <div id="topLoadingBar" class="h-1 bg-gradient-to-r from-emerald-500 to-teal-500 w-0 fixed top-0 left-0 transition-all duration-300 z-50"></div>
+
+    <!-- Matrix code falling background -->
+    <canvas id="matrixCanvas" class="matrix-canvas"></canvas>
+
+    <div class="flex h-screen relative z-10">
+        <!-- Left Panel: Control Center -->
+        <div class="w-1/3 border-r border-slate-800/80 p-6 flex flex-col gap-5 overflow-y-auto bg-slate-950/60 backdrop-blur-md">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-gradient-to-tr from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/25 flex items-center justify-center font-bold text-sm">BC</div>
+                    <h1 class="text-xl font-bold tracking-tight">BioCure <span class="text-emerald-400">Swarm</span></h1>
+                </div>
+                <button onclick="openInfoModal()" class="text-slate-500 hover:text-emerald-400 transition-colors font-mono text-sm" title="About Portal">ⓘ</button>
+            </div>
+
+            <!-- Presets Section -->
+            <div class="space-y-2">
+                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Analysis Targets</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setPrompt(this)" class="preset-btn px-3 py-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/30 rounded-lg text-left text-xs transition-all flex items-center gap-1.5 font-medium">
+                        <span>🧪</span> Protein Folding
+                    </button>
+                    <button onclick="setPrompt(this)" class="preset-btn px-3 py-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/30 rounded-lg text-left text-xs transition-all flex items-center gap-1.5 font-medium">
+                        <span>🧬</span> CRISPR Guide
+                    </button>
+                    <button onclick="setPrompt(this)" class="preset-btn px-3 py-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/30 rounded-lg text-left text-xs transition-all flex items-center gap-1.5 font-medium">
+                        <span>💊</span> Drug Binding
+                    </button>
+                    <button onclick="setPrompt(this)" class="preset-btn px-3 py-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/30 rounded-lg text-left text-xs transition-all flex items-center gap-1.5 font-medium">
+                        <span>🦠</span> Viral Mutation
+                    </button>
+                    <button onclick="setPrompt(this)" class="preset-btn col-span-2 px-3 py-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/30 rounded-lg text-left text-xs transition-all flex items-center justify-center gap-1.5 font-medium">
+                        <span>🎗️</span> Oncogenic Mutation
+                    </button>
+                </div>
+            </div>
+
+            <!-- Real-World Social Impact Highlight Card -->
+            <div class="bg-slate-900/80 border border-emerald-950/40 rounded-lg p-3 space-y-1.5 shadow-md">
+                <div class="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                    <span class="animate-pulse">🌍</span> Real-World Social Impact
+                </div>
+                <div class="text-xs text-slate-200 font-semibold" id="impactTitle">Solving Global Disease Bottlenecks</div>
+                <p class="text-[10px] text-slate-400 leading-normal" id="impactText">Select a target preset above to see how Cerebras real-time inference accelerates therapy and vaccine candidate iteration by 15x, turning weeks of slow legacy GPU computation into sub-second live discoveries.</p>
+            </div>
+
+            <!-- Main Input Area -->
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Genetic Sequence / Mutation Prompt</label>
+                    <textarea id="prompt" class="w-full bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-sm focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 outline-none h-24 resize-none transition-all placeholder:text-slate-700" placeholder="e.g. Analyze amino acid sequence mutations in human hemoglobin..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Microscopy / Gel Electrophoresis Image (Optional)</label>
+                    <div id="dropzoneBox" class="border border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-950/60 rounded-lg p-4 text-center cursor-pointer transition-all" onclick="document.getElementById('imageUpload').click()">
+                        <span id="dropzoneText" class="text-xs text-slate-400 block font-medium mb-1">Click to Upload Microscope Image</span>
+                        <span class="text-[10px] text-slate-600 block">PNG, JPG supported</span>
+                        <input type="file" id="imageUpload" class="hidden" accept="image/*" onchange="handleFileSelect(this)">
+                    </div>
+                </div>
+
+                <button id="synthesisBtn" onclick="generatePage()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 py-3 rounded-lg font-bold transition-all transform active:scale-95 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 text-sm flex items-center justify-center gap-2">
+                    Synthesize Hypothesis ⚡
+                </button>
+            </div>
+
+            <!-- Collaboration logs -->
+            <div class="mt-auto">
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Agent Swarm Coordination</h3>
+                <div id="collabFeed" class="space-y-2 font-mono text-xs bg-slate-950/80 p-4 rounded-lg border border-slate-800 h-28 overflow-y-auto">
+                    <div class="text-slate-600 italic">Waiting for analysis sequence...</div>
+                </div>
+            </div>
+
+            <!-- Pitch Generator Button -->
+            <button id="pitchBtn" style="display:none" onclick="generatePitch()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-lg font-semibold transition-all text-xs shadow-lg shadow-emerald-600/20 hover:shadow-emerald-500/30">
+                Generate Submission Pitch 📣
+            </button>
+
+            <!-- Credits Footer -->
+            <div class="mt-4 pt-3 border-t border-slate-900 text-center text-[10px] text-slate-500 font-mono space-y-1 select-none">
+                <div>Made by <a href="mailto:therahulgoel@gmail.com" class="text-slate-400 hover:text-emerald-400 transition-colors font-medium">therahulgoel@gmail.com</a></div>
+                <div class="text-[9px]">Twitter: <a href="https://x.com/therahulgoel" target="_blank" class="text-emerald-500 hover:text-emerald-400 transition-colors font-bold">@therahulgoel</a></div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Live 3D View & Telemetry HUD -->
+        <div class="w-2/3 flex flex-col bg-slate-950">
+            <!-- Top HUD Bar -->
+            <div id="telemetryHeader" style="display: none;" class="h-16 border-b border-slate-800 bg-slate-900 px-6 flex items-center justify-between text-xs transition-all duration-300">
+                <div class="flex items-center gap-3">
+                    <span class="bg-slate-800 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full font-mono text-[9px] font-bold">NEURAL PIPELINE</span>
+                    <span id="valSpeed" class="font-bold text-slate-200">1,450 tok/s</span>
+                    <span id="valTime" class="text-slate-400">1.1s analysis</span>
+                </div>
+                
+                <!-- Showdown HUD -->
+                <div class="flex items-center gap-6 w-1/2">
+                    <div class="flex-1 space-y-1">
+                        <div class="flex justify-between text-[9px] font-bold text-slate-500">
+                            <span class="text-emerald-400 animate-pulse font-extrabold">CEREBRAS CS-3 (WAFER-SCALE)</span>
+                            <span id="cerebrasStatus" class="text-emerald-400 font-mono">1.1s</span>
+                        </div>
+                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                            <div id="cerebrasBar" class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full rounded-full" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <div class="flex-1 space-y-1">
+                        <div class="flex justify-between text-[9px] font-bold text-slate-500">
+                            <span>STANDARD GPU CLUSTER</span>
+                            <span id="gpuStatus" class="text-red-400 font-mono">Est: 18s</span>
+                        </div>
+                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                            <div id="gpuBar" class="bg-red-500 h-full rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Savings Callout -->
+                <div id="savingsBanner" class="bg-emerald-950/40 border border-emerald-500/25 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-bold">
+                    Saved <span id="savingsSeconds">0.0s</span>!
+                </div>
+            </div>
+            
+            <!-- Dashboard Main Work Area -->
+            <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-950/40 relative">
+                <!-- Swarm Orchestration Flow HUD -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 space-y-3 shadow-xl">
+                    <div class="flex justify-between items-center">
+                        <div class="text-[10px] font-mono text-emerald-400 uppercase tracking-wider font-bold">Active Swarm Orchestration Pipeline</div>
+                        <div class="text-[9px] text-slate-500 font-mono">Gemma 4 Chained Experts</div>
+                    </div>
+                    <div class="grid grid-cols-4 gap-4 relative">
+                        <!-- Agent 1 Card -->
+                        <div id="agentNode-sequence" class="bg-slate-950 border border-slate-855/60 rounded-lg p-3 text-center transition-all duration-300 relative">
+                            <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">Agent 1</div>
+                            <div class="text-xs font-semibold text-slate-300">Sequence Analyst</div>
+                            <div class="text-[9px] text-slate-600 font-mono mt-1" id="agentStatus-sequence">Awaiting trigger...</div>
+                        </div>
+
+                        <!-- Agent 2 Card -->
+                        <div id="agentNode-folding" class="bg-slate-950 border border-slate-855/60 rounded-lg p-3 text-center transition-all duration-300 relative">
+                            <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">Agent 2</div>
+                            <div class="text-xs font-semibold text-slate-300">Folding Predictor</div>
+                            <div class="text-[9px] text-slate-600 font-mono mt-1" id="agentStatus-folding">Awaiting trigger...</div>
+                        </div>
+
+                        <!-- Agent 3 Card -->
+                        <div id="agentNode-literature" class="bg-slate-950 border border-slate-855/60 rounded-lg p-3 text-center transition-all duration-300 relative">
+                            <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">Agent 3</div>
+                            <div class="text-xs font-semibold text-slate-300">Literature Referencer</div>
+                            <div class="text-[9px] text-slate-600 font-mono mt-1" id="agentStatus-literature">Awaiting trigger...</div>
+                        </div>
+
+                        <!-- Agent 4 Card -->
+                        <div id="agentNode-synthesis" class="bg-slate-950 border border-slate-855/60 rounded-lg p-3 text-center transition-all duration-300 relative">
+                            <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">Agent 4</div>
+                            <div class="text-xs font-semibold text-slate-300">Synthesis Optimizer</div>
+                            <div class="text-[9px] text-slate-600 font-mono mt-1" id="agentStatus-synthesis">Awaiting trigger...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3D Molecule and Console Row -->
+                <div class="grid grid-cols-5 gap-6">
+                    <!-- 3D Molecular Canvas & Controls -->
+                    <div class="col-span-3 flex flex-col gap-2">
+                        <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Spatial Evidence Viewer</label>
+                        <div id="molViewer" class="h-[320px] bg-slate-900 border border-slate-800 rounded-xl relative overflow-hidden shadow-2xl">
+                            <div class="absolute inset-0 flex items-center justify-center text-slate-600 flex-col gap-2 font-mono text-xs select-none">
+                                <span class="text-3xl animate-pulse">🧬</span>
+                                <span>Awaiting target PDB structure...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 3D Controls -->
+                        <div id="molControls" style="display: none;" class="bg-slate-900/60 border border-slate-800/80 rounded-lg p-3 flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <div class="flex gap-1.5">
+                                    <button onclick="changeStyle('cartoon')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] rounded border border-slate-700 font-mono transition-colors">Cartoon</button>
+                                    <button onclick="changeStyle('sphere')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] rounded border border-slate-700 font-mono transition-colors">Sphere</button>
+                                    <button onclick="changeStyle('stick')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] rounded border border-slate-700 font-mono transition-colors">Stick</button>
+                                </div>
+                                <button onclick="toggleRotate()" id="rotateBtn" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] rounded border border-slate-700 font-mono text-emerald-400 font-bold transition-colors">Spin: On</button>
+                            </div>
+                            <div class="flex gap-2 items-center">
+                                <span class="text-[10px] text-slate-500 font-mono">Highlight Codon Position:</span>
+                                <input type="number" id="highlightResidue" min="1" max="1000" placeholder="e.g. 12" class="w-16 bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-xs text-center focus:border-emerald-500 outline-none font-mono">
+                                <button onclick="highlightResidue()" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-[10px] rounded font-bold transition-colors">Apply Highlight</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Neural Infusion Console -->
+                    <div class="col-span-2 flex flex-col gap-2">
+                        <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Neural Infusion Console</label>
+                        <div id="apiStream" class="h-[320px] bg-slate-900 border border-slate-800 rounded-xl font-mono text-xs text-emerald-400/90 p-4 overflow-y-auto space-y-2 shadow-2xl scrollbar-thin">
+                            <div class="text-slate-600 italic">// Awaiting molecular infusion sequences...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cerebras Advantage Showcase -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex justify-between items-center gap-6 shadow-xl">
+                    <div class="space-y-2 flex-1">
+                        <div class="text-[11px] font-mono text-emerald-400 uppercase tracking-wider font-bold">Cerebras CS-3 Advantage</div>
+                        <div class="text-sm font-bold text-slate-200">Wafer-Scale Parallel Swarm Execution</div>
+                        <p class="text-xs text-slate-350 leading-relaxed">
+                            Cerebras CS-3 houses 44GB of on-wafer SRAM directly next to 900,000 AI cores, completing the entire sequential 4-agent scientific workflow in real-time, bypassing standard GPU memory limits.
+                            <span class="text-emerald-400 font-medium block mt-2">
+                                <strong>Why Low Latency Matters:</strong> Molecular sequence design is an iterative cycle. Compressing a 18s wait to 1.1s allows researchers to interactively probe genetic variant libraries at the speed of thought—turning slow overnight batch jobs into instant, active discovery sessions.
+                            </span>
+                        </p>
+                    </div>
+                    <div class="text-right whitespace-nowrap bg-slate-950/50 p-4 rounded-xl border border-slate-800/80 min-w-[160px] flex flex-col justify-center">
+                        <div class="text-xs font-mono text-slate-500 mb-1">Research Acceleration</div>
+                        <div class="text-2xl font-black text-emerald-400 font-mono animate-pulse tracking-tight">~15.2x Faster</div>
+                        <div class="text-[11px] font-mono text-teal-400 font-semibold mt-1">93.4% Latency Cut</div>
+                    </div>
+                </div>
+
+                <!-- Scientific Report Area -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Generated Scientific Hypothesis & Synthesis Protocol</label>
+                        <button id="downloadReportBtn" style="display: none;" onclick="downloadReport()" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/30 text-[10px] rounded font-mono text-emerald-400 font-bold transition-all flex items-center gap-1">
+                            📥 Download Report (.md)
+                        </button>
+                    </div>
+                    <div id="reportArea" class="bg-slate-900 border border-slate-800/80 p-8 rounded-xl min-h-[280px] shadow-2xl text-slate-300 whitespace-pre-wrap leading-relaxed">
+                        <div class="flex flex-col items-center justify-center py-12 text-slate-600 font-mono text-xs gap-3">
+                            <div class="text-3xl animate-bounce">🔍</div>
+                            <span>Awaiting scientific agent coordination report...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pitch Modal Overlay -->
+    <div id="pitchModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[110] flex items-center justify-center">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl w-full max-w-lg shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-emerald-400 font-mono flex items-center gap-1.5"><span>📣</span> Submission Pitch Draft</h3>
+                <button onclick="closePitch()" class="text-slate-500 hover:text-slate-300 text-xs">✕</button>
+            </div>
+            <p class="text-[11px] text-slate-400">Copy this thread draft to share your Cerebras-powered hackathon project on X:</p>
+            <textarea id="pitchContent" readonly class="w-full h-64 bg-slate-950 border border-slate-800 rounded-lg p-3 font-mono text-xs text-slate-300 resize-none outline-none focus:border-emerald-500"></textarea>
+            <div class="flex justify-end gap-3">
+                <button onclick="closePitch()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg transition-colors">Close</button>
+                <button onclick="copyPitch()" class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-xs rounded-lg font-bold transition-all transform active:scale-95 shadow-lg shadow-emerald-500/10">Copy Draft</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onboarding / Info Modal -->
+    <div id="infoModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[120] flex items-center justify-center transition-all duration-300">
+        <div class="bg-slate-900 border-2 border-emerald-500/30 p-8 rounded-3xl max-w-xl w-full mx-4 shadow-[0_0_50px_rgba(16,185,129,0.15)] relative overflow-hidden flex flex-col min-h-[480px]">
+            <!-- Glowing accent blur background -->
+            <div class="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl"></div>
+
+            <!-- Slide 0: Welcome & Diagram -->
+            <div class="info-slide space-y-5 flex-1 flex flex-col justify-between" id="slide-0">
+                <div class="text-center space-y-2 relative z-10">
+                    <div class="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-xl font-bold mx-auto shadow-lg shadow-emerald-500/20">BC</div>
+                    <h2 class="text-2xl font-bold tracking-tight">BioCure <span class="text-emerald-400">Swarm</span></h2>
+                    <p class="text-xs text-slate-400 font-mono">Accelerating Proteomics at the Speed of Thought</p>
+                </div>
+
+                <!-- Embedded Flow Diagram -->
+                <div class="bg-slate-950/80 border border-slate-800/80 p-4 rounded-2xl space-y-3 relative overflow-hidden select-none z-10 my-1">
+                    <div class="text-[9px] font-mono text-emerald-400 font-bold uppercase tracking-wider text-center flex items-center justify-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Chained Agent Swarm Architecture
+                    </div>
+                    <div class="flex items-center justify-between gap-1 text-[10px] text-center font-mono">
+                        <div class="bg-slate-900 border border-slate-800/80 rounded-xl p-2 flex-1 min-w-[70px]">
+                            <div class="text-emerald-400 font-extrabold text-[10px]">Analyst</div>
+                            <div class="text-[8px] text-slate-500 mt-0.5 leading-tight">Scans genetic variants</div>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[8px] text-slate-500 font-bold leading-none">Locus</span>
+                            <span class="text-slate-650 font-bold leading-none">➔</span>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800/80 rounded-xl p-2 flex-1 min-w-[70px]">
+                            <div class="text-emerald-400 font-extrabold text-[10px]">Folding</div>
+                            <div class="text-[8px] text-slate-500 mt-0.5 leading-tight">Predicts 3D structure</div>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[8px] text-slate-500 font-bold leading-none">PDB</span>
+                            <span class="text-slate-650 font-bold leading-none">➔</span>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800/80 rounded-xl p-2 flex-1 min-w-[70px]">
+                            <div class="text-emerald-400 font-extrabold text-[10px]">PubMed</div>
+                            <div class="text-[8px] text-slate-500 mt-0.5 leading-tight">Scrapes references</div>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[8px] text-slate-500 font-bold leading-none">Refs</span>
+                            <span class="text-slate-650 font-bold leading-none">➔</span>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800/80 rounded-xl p-2 flex-1 min-w-[70px]">
+                            <div class="text-emerald-400 font-extrabold text-[10px]">Synthesis</div>
+                            <div class="text-[8px] text-slate-500 mt-0.5 leading-tight">Designs protocol</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center text-xs text-slate-300 px-4">
+                    Welcome to <strong>BioCure Swarm</strong>. This portal orchestrates a collaborative ensemble of four specialized biological AI agents to instantly evaluate genetic variants and synthesize drug-discovery hypotheses.
+                </div>
+            </div>
+
+            <!-- Slide 1: Why Speed Matters (Cerebras CS-3 Advantage) -->
+            <div class="info-slide space-y-4 flex-1 flex flex-col justify-between hidden" id="slide-1">
+                <div class="text-center space-y-1 relative z-10">
+                    <h3 class="text-lg font-bold text-emerald-400 flex items-center justify-center gap-1.5">⚡ The Cerebras Speed Advantage</h3>
+                    <p class="text-[11px] text-slate-500 font-mono">1.1s CS-3 Swarms vs 18s Legacy GPUs</p>
+                </div>
+
+                <div class="space-y-3.5 text-xs text-slate-350 px-2 leading-relaxed">
+                    <div class="flex gap-3 items-start">
+                        <span class="text-base">🧠</span>
+                        <div>
+                            <strong class="text-slate-200 block font-bold">Cognitive Flow State Loop</strong>
+                            <span>GPU latencies (~18s) break creative research flow. Compressing the swarm to 1.1s enables instant, speed-of-thought variant screening.</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 items-start">
+                        <span class="text-base">🧬</span>
+                        <div>
+                            <strong class="text-slate-200 block font-bold">Combinatorial Sweeps (18 Mins vs. 5 Hours)</strong>
+                            <span>Evaluating 1,000 mutation variants takes 5 hours of waiting on standard GPUs, but takes only 18 minutes on Cerebras.</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 items-start">
+                        <span class="text-base">⚡</span>
+                        <div>
+                            <strong class="text-slate-200 block font-bold">Dense Agent Swarm Debates</strong>
+                            <span>CS-3 houses models directly on-wafer in SRAM. Eliminating weight-swapping memory delays makes multi-agent collaborative logic practical.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 2: Real-World Disease Impact -->
+            <div class="info-slide space-y-4 flex-1 flex flex-col justify-between hidden" id="slide-2">
+                <div class="text-center space-y-1 relative z-10">
+                    <h3 class="text-lg font-bold text-emerald-400 flex items-center justify-center gap-1.5">🌍 Solving Global Diseases</h3>
+                    <p class="text-[11px] text-slate-500 font-mono">Targeting Cancers, Diabetes, and Pandemics</p>
+                </div>
+
+                <div class="space-y-3.5 text-xs text-slate-350 px-2 leading-relaxed">
+                    <div class="flex gap-3 items-start">
+                        <span class="text-base">🎗️</span>
+                        <div>
+                            <strong class="text-slate-200 block font-bold">Targeting Drug-Resistant Cancers</strong>
+                            <span>Instantly models pocket mutations (KRAS G12C & secondary Y96C resistance) to design next-generation modifiers before tumor escape.</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 items-start">
+                        <span class="text-base">🌡️</span>
+                        <div>
+                            <strong class="text-slate-200 block font-bold">Heat-Stable Insulin Therapeutics</strong>
+                            <span>Models proinsulin variants to design thermostable mutations that don't require cold-chains in remote developing clinics.</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 items-start">
+                        <span class="text-base">🦠</span>
+                        <div>
+                            <strong class="text-slate-200 block font-bold">Pandemic Surveillance & CRISPR Safety</strong>
+                            <span>Tracks H5N1 flu spillover and scans whole-genome targets for safe, off-target free CRISPR guide RNAs (Sickle Cell HBB gene correction).</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3: Interactive Discovery Center (How to Navigate) -->
+            <div class="info-slide space-y-4 flex-1 flex flex-col justify-between hidden" id="slide-3">
+                <div class="text-center space-y-1 relative z-10">
+                    <h3 class="text-lg font-bold text-emerald-400 flex items-center justify-center gap-1.5">🔬 How to Navigate</h3>
+                    <p class="text-[11px] text-slate-500 font-mono">Your Interactive Command Center</p>
+                </div>
+
+                <div class="space-y-3.5 text-xs text-slate-300 px-2">
+                    <div class="flex gap-2.5 items-center">
+                        <span class="bg-slate-800 text-emerald-400 w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px]">1</span>
+                        <span>Select a target variant preset or input custom sequences.</span>
+                    </div>
+                    <div class="flex gap-2.5 items-center">
+                        <span class="bg-slate-800 text-emerald-400 w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px]">2</span>
+                        <span>(Optional) Upload Microscopy / Gel images for multi-modal context.</span>
+                    </div>
+                    <div class="flex gap-2.5 items-center">
+                        <span class="bg-slate-800 text-emerald-400 w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px]">3</span>
+                        <span>Click <strong>Synthesize Hypothesis</strong> to watch the live swarm coordinate.</span>
+                    </div>
+                    <div class="flex gap-2.5 items-center">
+                        <span class="bg-slate-800 text-emerald-400 w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px]">4</span>
+                        <span>Interact with the 3D model, highlight codons, and download reports.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer: Navigation Controls & Dots -->
+            <div class="flex justify-between items-center border-t border-slate-800/80 pt-4 mt-6 relative z-10">
+                <button onclick="prevSlide()" id="prevSlideBtn" class="text-xs text-slate-500 hover:text-slate-300 transition-colors invisible">Back</button>
+                
+                <!-- Dot Indicators -->
+                <div class="flex gap-1.5">
+                    <span class="slide-dot w-2.5 h-2.5 rounded-full bg-emerald-500 transition-all duration-300" onclick="showSlide(0)"></span>
+                    <span class="slide-dot w-2 h-2 rounded-full bg-slate-800 transition-all duration-300 cursor-pointer" onclick="showSlide(1)"></span>
+                    <span class="slide-dot w-2 h-2 rounded-full bg-slate-800 transition-all duration-300 cursor-pointer" onclick="showSlide(2)"></span>
+                    <span class="slide-dot w-2 h-2 rounded-full bg-slate-800 transition-all duration-300 cursor-pointer" onclick="showSlide(3)"></span>
+                </div>
+
+                <button onclick="nextSlide()" id="nextSlideBtn" class="px-5 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 rounded-xl font-bold text-xs transition-all transform active:scale-95 shadow-lg shadow-emerald-500/25">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=2.0.0"></script>
+</body>
+</html>
