@@ -45,16 +45,16 @@ Judges watch hundreds of videos. In a 60-second limit, every second counts. Use 
 
 * **0:00 - 0:10 (10s) | The Hook & Problem:**
   * **Visual:** Site launches showing the Onboarding Modal. Hover over the Swarm Architecture diagram, then click "Begin Discovery" to close it.
-  * **Voiceover:** *"This is BioCure Swarm. Chained scientific agent loops typically take standard GPUs 18 seconds to run, breaking research context. Let's run it in real-time."*
+  * **Voiceover:** *"This is BioCure Swarm. Chained agent loops take standard GPUs 18 seconds. Testing a 1,000-variant library takes 5 hours of waiting—breaking research focus. Let's run it in real-time."*
 * **0:10 - 0:30 (20s) | The Swarm Execution:**
-  * **Visual:** Select the 'Oncogenic Mutation' preset ➔ Click 'Synthesize Hypothesis ⚡' ➔ The visual Swarm Flow HUD cards pulse green and the neural console streams logs.
-  * **Voiceover:** *"By targeting the drug-resistant KRAS cancer mutation, the visual Swarm Flow HUD lights up as 4 expert agents coordinate sequentially on Cerebras cloud to return a complete synthesis protocol."*
+  * **Visual:** Select the 'Viral Mutation' preset (H5N1) ➔ Click 'Synthesize Hypothesis ⚡' ➔ The visual Swarm Flow HUD cards pulse green and the neural console streams logs.
+  * **Voiceover:** *"Triggering our H5N1 avian flu target, the visual Swarm Flow HUD lights up as 4 expert agents coordinate sequentially on Cerebras cloud to model zoonotic spillover receptor adaptations."*
 * **0:30 - 0:45 (15s) | The Hardware Showdown:**
   * **Visual:** Zoom the camera in on the Telemetry HUD as the synthesis completes showing 1.1s (Cerebras) vs 18s (GPU).
-  * **Voiceover:** *"Powered by Cerebras CS-3 running at 1,450 tokens per second, the entire swarm completes in just 1.1 seconds—a 15x speedup and 93% latency reduction."*
+  * **Voiceover:** *"Powered by Cerebras CS-3 running at 1,450 tokens per second, the loop completes in just 1.1 seconds—a 15x speedup. The 1,000-variant sweep is compressed to only 18 minutes."*
 * **0:45 - 1:00 (15s) | Molecular Focus & Outro:**
-  * **Visual:** Type `12` in the Highlight Codon box, click 'Apply Highlight' (camera zooms/centers on the red sphere), click 'Download Report', and show the X Pitch modal.
-  * **Voiceover:** *"We can instantly zoom in on codon 12 of the 3D cancer pocket, download the lab protocol, and share our pitch. BioCure Swarm turns weeks of calculation into speed-of-thought discovery."*
+  * **Visual:** Type `226` in the Highlight Codon box, click 'Apply Highlight' (camera zooms/centers on the receptor red sphere), click 'Download Report', and show the X Pitch modal.
+  * **Voiceover:** *"We can instantly highlight adaptation residues in 3D, download the protocol, and share our pitch. BioCure Swarm turns overnight batch jobs into active, speed-of-thought discovery."*
 
 ### 💻 Step 2: The Perfect GitHub Repository
 Make your repository look like a production-grade library, not a weekend draft:
