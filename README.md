@@ -1,5 +1,7 @@
 # 🧬 BioCure Swarm: Real-Time Proteomics Discovery Engine
 
+⚡ **Live Demo Website:** [therahulgoel.github.io/BioCure-Swarm](https://therahulgoel.github.io/BioCure-Swarm/)
+
 **BioCure Swarm** is a real-time scientific discovery engine powered by **Cerebras Wafer-Scale CS-3 inference engines** and **Google Gemma 4** designed to accelerate candidate therapeutic discovery for global diseases.
 
 By utilizing Cerebras' high-throughput, low-latency wafer-scale engine, BioCure Swarm orchestrates a multi-agent ensemble of specialized biological experts (Sequence Analyst, Folding Predictor, Literature Cross-Referencer, Synthesis Optimizer) to deliver near-instantaneous proteomics and genomics hypotheses.
