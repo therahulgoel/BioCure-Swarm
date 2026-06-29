@@ -32,17 +32,16 @@ BioCure-Swarm/
 
 ---
 
-## ⚡ The Core Innovation: Sub-Second Scientific Swarms
+## ⚡ The Core Innovation: Cerebras CS-3 vs. Legacy GPU Showdown
 
-Scientific queries and genetic sequences are extremely long and dense. On standard GPU clusters, running a sequential chain of 4 complex agent models takes 15–20 seconds. 
+Scientific sequence exploration is highly iterative. Legacy GPUs bottleneck the research loop due to memory-bandwidth limitations. By leveraging the **Cerebras CS-3**, we process the entire 4-step coordination loop in **~1.1 seconds**, running at **1,450+ tokens/second**.
 
-By leveraging the **Cerebras CS-3**, we process the entire 4-step coordination loop in **~1.1 seconds**, running at **1,450+ tokens/second**.
-
-| Performance Metric | Traditional GPU (Nvidia A100) | Cerebras Wafer-Scale (CS-3) |
-| :--- | :--- | :--- |
-| **Inference Speed** | ~50 - 80 tokens/sec | **1,450+ tokens/sec** |
-| **Loop Latency** | ~18.0 seconds | **~1.1 seconds** |
-| **Response Delta** | 1x | **~15x Faster** |
+| Performance Metric | Traditional GPU (NVIDIA A100) | Cerebras Wafer-Scale (CS-3) | Scientific Impact |
+| :--- | :--- | :--- | :--- |
+| **Inference Speed** | ~50 - 80 tokens/sec | **1,450+ tokens/sec** | ~18x throughput increase |
+| **Sequential Swarm Loop** | ~18.0 seconds | **~1.1 seconds** | Preserves researcher's cognitive flow state |
+| **Combinatorial Sweep (1k)** | ~5 hours | **~18 minutes** | Turns overnight batch jobs into interactive sessions |
+| **Handoff Memory Overhead** | High (VRAM model swapping) | **Zero (On-wafer SRAM execution)** | Makes dense, multi-agent debates practical |
 
 ---
 
